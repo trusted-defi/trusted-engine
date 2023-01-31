@@ -37,7 +37,7 @@ func (s *TrustedService) AddTx(ctx context.Context, req *trusted.AddTxRequest) (
 		res.Error = errors.New("invalid tx data").Error()
 	}
 
-	return res,nil
+	return res, nil
 }
 
 func (s *TrustedService) Status(ctx context.Context, req *trusted.StatusRequest) (*trusted.StatusResponse, error) {
@@ -64,6 +64,12 @@ func (s *TrustedService) Pending(ctx context.Context, req *trusted.PendingReques
 	return res, nil
 }
 
+func (s *TrustedService) Crypt(ctx context.Context, req *trusted.CryptRequest) (*trusted.CryptResponse, error) {
+	// todo: change crypt method to sgx.
+	res := new(trusted.CryptResponse)
+	res.Crypted = req.GetData()
+	return res, nil
+}
 func RegisterService(server *grpc.Server, n *node.Node) {
 	s := new(TrustedService)
 	s.n = n
@@ -85,4 +91,3 @@ func StartTrustedService(n *node.Node) {
 		return
 	}
 }
-

@@ -13,6 +13,9 @@ service TrustedService {
     rpc Status(StatusRequest) returns (StatusResponse) {}
     rpc Reset(ResetRequest) returns (ResetResponse) {}
     rpc Pending(PendingRequest) returns (PendingResponse) {}
+
+
+    rpc Crypt(CryptRequest) returns (CryptResponse) {}
 }
 
 
