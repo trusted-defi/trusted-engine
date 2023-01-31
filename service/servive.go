@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	corecmn "github.com/trusted-defi/trusted-txpool/core/common"
 	"github.com/trusted-defi/trusted-txpool/node"
 	trusted "github.com/trusted-defi/trusted-txpool/protocol/generate/trusted/v1"
@@ -65,11 +67,69 @@ func (s *TrustedService) Pending(ctx context.Context, req *trusted.PendingReques
 }
 
 func (s *TrustedService) Crypt(ctx context.Context, req *trusted.CryptRequest) (*trusted.CryptResponse, error) {
-	// todo: change crypt method to sgx.
+	var err error
 	res := new(trusted.CryptResponse)
-	res.Crypted = req.GetData()
+	res.Crypted, err = crypt(req.GetData())
+	if err != nil {
+		return nil, err
+	}
 	return res, nil
 }
+
+func generateTxAsset(tx *types.Transaction) []byte {
+	// todo: change generate method to sgx.
+	return []byte{1}
+}
+
+func crypt(data []byte) ([]byte, error) {
+	// todo: change crypt method to sgx.
+	return data, nil
+}
+
+func decrypt(data []byte) ([]byte, error) {
+	// todo: change decrypt method to sgx.
+	return data, nil
+}
+func (s *TrustedService) AddLocalTrustedTx(ctx context.Context, req *trusted.AddTrustedTxRequest) (*trusted.AddTrustedTxResponse, error) {
+	res := new(trusted.AddTrustedTxResponse)
+	tx := new(types.Transaction)
+	txdata, err := decrypt(req.GetCtyptedTx())
+	if err != nil {
+		return nil, err
+	}
+	err = tx.UnmarshalBinary(txdata)
+	if err != nil {
+		res.Hash = common.Hash{}.Bytes()
+		res.Asset = make([]byte, 0)
+		return res, err
+	}
+	// todo: add check tx and add local tx to txpool.
+
+	res.Hash = tx.Hash().Bytes()
+	res.Asset = generateTxAsset(tx)
+	return res, nil
+}
+
+func (s *TrustedService) AddRemoteTrustedTx(ctx context.Context, req *trusted.AddTrustedTxRequest) (*trusted.AddTrustedTxResponse, error) {
+	res := new(trusted.AddTrustedTxResponse)
+	tx := new(types.Transaction)
+	txdata, err := decrypt(req.GetCtyptedTx())
+	if err != nil {
+		return nil, err
+	}
+	err = tx.UnmarshalBinary(txdata)
+	if err != nil {
+		res.Hash = common.Hash{}.Bytes()
+		res.Asset = make([]byte, 0)
+		return res, err
+	}
+	// todo: add check tx and add remote tx to txpool.
+
+	res.Hash = tx.Hash().Bytes()
+	res.Asset = generateTxAsset(tx)
+	return res, nil
+}
+
 func RegisterService(server *grpc.Server, n *node.Node) {
 	s := new(TrustedService)
 	s.n = n

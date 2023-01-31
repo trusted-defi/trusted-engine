@@ -87,3 +87,12 @@ message CryptRequest {
 message CryptResponse {
     bytes crypted = 1;
 }
+
+message AddTrustedTxRequest {
+    bytes ctypted_tx = 1;
+}
+
+message AddTrustedTxResponse {
+    bytes hash = 1;
+    bytes asset = 2;
+}

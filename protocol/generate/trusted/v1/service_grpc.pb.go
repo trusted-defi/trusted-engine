@@ -29,6 +29,8 @@ type TrustedServiceClient interface {
 	Reset(ctx context.Context, in *ResetRequest, opts ...grpc.CallOption) (*ResetResponse, error)
 	Pending(ctx context.Context, in *PendingRequest, opts ...grpc.CallOption) (*PendingResponse, error)
 	Crypt(ctx context.Context, in *CryptRequest, opts ...grpc.CallOption) (*CryptResponse, error)
+	AddLocalTrustedTx(ctx context.Context, in *AddTrustedTxRequest, opts ...grpc.CallOption) (*AddTrustedTxResponse, error)
+	AddRemoteTrustedTx(ctx context.Context, in *AddTrustedTxRequest, opts ...grpc.CallOption) (*AddTrustedTxResponse, error)
 }
 
 type trustedServiceClient struct {
@@ -93,6 +95,24 @@ func (c *trustedServiceClient) Crypt(ctx context.Context, in *CryptRequest, opts
 	return out, nil
 }
 
+func (c *trustedServiceClient) AddLocalTrustedTx(ctx context.Context, in *AddTrustedTxRequest, opts ...grpc.CallOption) (*AddTrustedTxResponse, error) {
+	out := new(AddTrustedTxResponse)
+	err := c.cc.Invoke(ctx, "/trusted.v1.TrustedService/AddLocalTrustedTx", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trustedServiceClient) AddRemoteTrustedTx(ctx context.Context, in *AddTrustedTxRequest, opts ...grpc.CallOption) (*AddTrustedTxResponse, error) {
+	out := new(AddTrustedTxResponse)
+	err := c.cc.Invoke(ctx, "/trusted.v1.TrustedService/AddRemoteTrustedTx", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TrustedServiceServer is the server API for TrustedService service.
 // All implementations must embed UnimplementedTrustedServiceServer
 // for forward compatibility
@@ -103,6 +123,8 @@ type TrustedServiceServer interface {
 	Reset(context.Context, *ResetRequest) (*ResetResponse, error)
 	Pending(context.Context, *PendingRequest) (*PendingResponse, error)
 	Crypt(context.Context, *CryptRequest) (*CryptResponse, error)
+	AddLocalTrustedTx(context.Context, *AddTrustedTxRequest) (*AddTrustedTxResponse, error)
+	AddRemoteTrustedTx(context.Context, *AddTrustedTxRequest) (*AddTrustedTxResponse, error)
 	mustEmbedUnimplementedTrustedServiceServer()
 }
 
@@ -127,6 +149,12 @@ func (UnimplementedTrustedServiceServer) Pending(context.Context, *PendingReques
 }
 func (UnimplementedTrustedServiceServer) Crypt(context.Context, *CryptRequest) (*CryptResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Crypt not implemented")
+}
+func (UnimplementedTrustedServiceServer) AddLocalTrustedTx(context.Context, *AddTrustedTxRequest) (*AddTrustedTxResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddLocalTrustedTx not implemented")
+}
+func (UnimplementedTrustedServiceServer) AddRemoteTrustedTx(context.Context, *AddTrustedTxRequest) (*AddTrustedTxResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddRemoteTrustedTx not implemented")
 }
 func (UnimplementedTrustedServiceServer) mustEmbedUnimplementedTrustedServiceServer() {}
 
@@ -249,6 +277,42 @@ func _TrustedService_Crypt_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TrustedService_AddLocalTrustedTx_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddTrustedTxRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrustedServiceServer).AddLocalTrustedTx(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/trusted.v1.TrustedService/AddLocalTrustedTx",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrustedServiceServer).AddLocalTrustedTx(ctx, req.(*AddTrustedTxRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrustedService_AddRemoteTrustedTx_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddTrustedTxRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrustedServiceServer).AddRemoteTrustedTx(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/trusted.v1.TrustedService/AddRemoteTrustedTx",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrustedServiceServer).AddRemoteTrustedTx(ctx, req.(*AddTrustedTxRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TrustedService_ServiceDesc is the grpc.ServiceDesc for TrustedService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -279,6 +343,14 @@ var TrustedService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Crypt",
 			Handler:    _TrustedService_Crypt_Handler,
+		},
+		{
+			MethodName: "AddLocalTrustedTx",
+			Handler:    _TrustedService_AddLocalTrustedTx_Handler,
+		},
+		{
+			MethodName: "AddRemoteTrustedTx",
+			Handler:    _TrustedService_AddRemoteTrustedTx_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
