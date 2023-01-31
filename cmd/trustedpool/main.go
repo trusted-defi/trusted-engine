@@ -2,11 +2,11 @@ package main
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/trusted-defi/trusted-txpool/node"
-	"github.com/urfave/cli/v2"
 	"github.com/trusted-defi/trusted-txpool/cmd/trustedpool/version"
+	"github.com/trusted-defi/trusted-txpool/node"
 	"github.com/trusted-defi/trusted-txpool/service"
 	"github.com/trusted-defi/trusted-txpool/tools"
+	"github.com/urfave/cli/v2"
 	"os"
 	"runtime"
 )
@@ -19,8 +19,7 @@ func main() {
 	app.Usage = "this is a txpool runing in enclave"
 	app.Action = startNode
 	app.Version = version.Version()
-	app.Commands = []*cli.Command{
-	}
+	app.Commands = []*cli.Command{}
 	//app.Flags = appFlags
 
 	app.Before = func(ctx *cli.Context) error {
@@ -46,7 +45,7 @@ func main() {
 	}
 }
 
-func startNode(ctx *cli.Context) error{
+func startNode(ctx *cli.Context) error {
 	log.Info("start node")
 	n := node.NewNode()
 	service.StartTrustedService(n)
