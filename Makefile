@@ -2,14 +2,14 @@
 PROTO_GO_FILES = $(shell find . -path -prune -o -type f -name '*.pb.go' -print | grep -v vendor)
 #PROTO_GO_FILES = $(patsubst %.proto, %.pb.go, $(PROTO_FILES))
 DEST=${PWD}
-BIN=trustedpool
+BIN=trustedengine
 
 .PHONY: all bin proto build deps clean
 
 all: proto bin
 
 bin:
-	ego-go build -o=${BIN} ./cmd/trustedpool
+	ego-go build -o=${BIN} ./cmd/trustedengine
 	ego sign ${BIN}
 
 build: $(PROTO_GO_FILES)

@@ -3,7 +3,7 @@ package common
 import (
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/core/types"
-	trusted "github.com/trusted-defi/trusted-txpool/protocol/generate/trusted/v1"
+	trusted "github.com/trusted-defi/trusted-engine/protocol/generate/trusted/v1"
 	"math/big"
 )
 

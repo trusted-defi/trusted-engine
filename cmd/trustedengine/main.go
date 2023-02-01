@@ -2,10 +2,10 @@ package main
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/trusted-defi/trusted-txpool/cmd/trustedpool/version"
-	"github.com/trusted-defi/trusted-txpool/node"
-	"github.com/trusted-defi/trusted-txpool/service"
-	"github.com/trusted-defi/trusted-txpool/tools"
+	"github.com/trusted-defi/trusted-engine/cmd/trustedengine/version"
+	"github.com/trusted-defi/trusted-engine/node"
+	"github.com/trusted-defi/trusted-engine/service"
+	"github.com/trusted-defi/trusted-engine/tools"
 	"github.com/urfave/cli/v2"
 	"os"
 	"runtime"
@@ -15,7 +15,7 @@ var log = logrus.WithField("prefix", "main")
 
 func main() {
 	app := cli.App{}
-	app.Name = "trustedpool"
+	app.Name = "trustedengine"
 	app.Usage = "this is a txpool runing in enclave"
 	app.Action = startNode
 	app.Version = version.Version()

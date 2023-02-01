@@ -2,7 +2,7 @@ version: v1
 managed:
   enabled: true
   go_package_prefix:
-    default: github.com/trusted-defi/trusted-txpool/protocol
+    default: github.com/trusted-defi/trusted-engine/protocol
     except:
       - buf.build/googleapis/googleapis
 plugins:

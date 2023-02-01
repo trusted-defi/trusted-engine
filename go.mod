@@ -1,4 +1,4 @@
-module github.com/trusted-defi/trusted-txpool
+module github.com/trusted-defi/trusted-engine
 
 go 1.18
 
