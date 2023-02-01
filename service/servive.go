@@ -10,6 +10,8 @@ import (
 	"github.com/trusted-defi/trusted-engine/node"
 	trusted "github.com/trusted-defi/trusted-engine/protocol/generate/trusted/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"math/big"
 	"net"
@@ -252,6 +254,10 @@ func (s *TrustedService) AddRemoteTrustedTx(ctx context.Context, req *trusted.Ad
 	res.Hash = tx.Hash().Bytes()
 	res.Asset = generateTxAsset(tx)
 	return res, nil
+}
+
+func (s *TrustedService) FillBlock(ctx context.Context, req *trusted.FillBlockRequest) (*trusted.FillBlockResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FillBlock not implemented")
 }
 
 func RegisterService(server *grpc.Server, n *node.Node) {

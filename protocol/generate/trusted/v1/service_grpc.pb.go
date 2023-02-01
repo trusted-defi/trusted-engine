@@ -39,6 +39,7 @@ type TrustedServiceClient interface {
 	Crypt(ctx context.Context, in *CryptRequest, opts ...grpc.CallOption) (*CryptResponse, error)
 	AddLocalTrustedTx(ctx context.Context, in *AddTrustedTxRequest, opts ...grpc.CallOption) (*AddTrustedTxResponse, error)
 	AddRemoteTrustedTx(ctx context.Context, in *AddTrustedTxRequest, opts ...grpc.CallOption) (*AddTrustedTxResponse, error)
+	FillBlock(ctx context.Context, in *FillBlockRequest, opts ...grpc.CallOption) (*FillBlockResponse, error)
 }
 
 type trustedServiceClient struct {
@@ -193,6 +194,15 @@ func (c *trustedServiceClient) AddRemoteTrustedTx(ctx context.Context, in *AddTr
 	return out, nil
 }
 
+func (c *trustedServiceClient) FillBlock(ctx context.Context, in *FillBlockRequest, opts ...grpc.CallOption) (*FillBlockResponse, error) {
+	out := new(FillBlockResponse)
+	err := c.cc.Invoke(ctx, "/trusted.v1.TrustedService/FillBlock", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TrustedServiceServer is the server API for TrustedService service.
 // All implementations must embed UnimplementedTrustedServiceServer
 // for forward compatibility
@@ -213,6 +223,7 @@ type TrustedServiceServer interface {
 	Crypt(context.Context, *CryptRequest) (*CryptResponse, error)
 	AddLocalTrustedTx(context.Context, *AddTrustedTxRequest) (*AddTrustedTxResponse, error)
 	AddRemoteTrustedTx(context.Context, *AddTrustedTxRequest) (*AddTrustedTxResponse, error)
+	FillBlock(context.Context, *FillBlockRequest) (*FillBlockResponse, error)
 	mustEmbedUnimplementedTrustedServiceServer()
 }
 
@@ -267,6 +278,9 @@ func (UnimplementedTrustedServiceServer) AddLocalTrustedTx(context.Context, *Add
 }
 func (UnimplementedTrustedServiceServer) AddRemoteTrustedTx(context.Context, *AddTrustedTxRequest) (*AddTrustedTxResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddRemoteTrustedTx not implemented")
+}
+func (UnimplementedTrustedServiceServer) FillBlock(context.Context, *FillBlockRequest) (*FillBlockResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FillBlock not implemented")
 }
 func (UnimplementedTrustedServiceServer) mustEmbedUnimplementedTrustedServiceServer() {}
 
@@ -569,6 +583,24 @@ func _TrustedService_AddRemoteTrustedTx_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TrustedService_FillBlock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FillBlockRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrustedServiceServer).FillBlock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/trusted.v1.TrustedService/FillBlock",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrustedServiceServer).FillBlock(ctx, req.(*FillBlockRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TrustedService_ServiceDesc is the grpc.ServiceDesc for TrustedService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -639,6 +671,10 @@ var TrustedService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddRemoteTrustedTx",
 			Handler:    _TrustedService_AddRemoteTrustedTx_Handler,
+		},
+		{
+			MethodName: "FillBlock",
+			Handler:    _TrustedService_FillBlock_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

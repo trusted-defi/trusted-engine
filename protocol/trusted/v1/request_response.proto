@@ -139,3 +139,11 @@ message AddTrustedTxResponse {
     bytes hash = 1;
     bytes asset = 2;
 }
+
+message FillBlockRequest {
+    bytes params = 1;
+}
+
+message FillBlockResponse {
+    bytes block = 1;
+}
