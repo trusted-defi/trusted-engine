@@ -175,6 +175,8 @@ type TxPool struct {
 	chainHeadCh  chan core.ChainHeadEvent
 	chainHeadSub event.Subscription
 	gasPrice     *big.Int
+	txFeed       event.Feed
+	scope        event.SubscriptionScope
 	signer       types.Signer
 	mu           sync.RWMutex
 
@@ -349,14 +351,23 @@ func (pool *TxPool) loop() {
 
 // Stop terminates the transaction pool.
 func (pool *TxPool) Stop() {
+	// Unsubscribe all subscriptions registered from txpool
+	pool.scope.Close()
 
 	// Unsubscribe subscriptions registered from blockchain
+	// todo: pool.chainHeadSub.Unsubscribe()
 	pool.wg.Wait()
 
 	if pool.journal != nil {
 		pool.journal.close()
 	}
 	log.Info("Transaction pool stopped")
+}
+
+// SubscribeNewTxsEvent registers a subscription of NewTxsEvent and
+// starts sending event to the given channel.
+func (pool *TxPool) SubscribeNewTxsEvent(ch chan<- core.NewTxsEvent) event.Subscription {
+	return pool.scope.Track(pool.txFeed.Subscribe(ch))
 }
 
 // GasPrice returns the current gas price enforced by the transaction pool.
@@ -1113,6 +1124,7 @@ func (pool *TxPool) runReorg(done chan struct{}, reset *txpoolResetRequest, dirt
 		for _, set := range events {
 			txs = append(txs, set.Flatten()...)
 		}
+		pool.txFeed.Send(core.NewTxsEvent{txs})
 	}
 }
 

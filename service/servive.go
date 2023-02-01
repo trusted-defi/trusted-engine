@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	corecmn "github.com/trusted-defi/trusted-engine/core/common"
 	"github.com/trusted-defi/trusted-engine/core/mempool"
@@ -13,6 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"log"
 	"math/big"
 	"net"
 )
@@ -190,6 +192,38 @@ func (s *TrustedService) TxHas(ctx context.Context, req *trusted.TxHasRequest) (
 	res := new(trusted.TxHasResponse)
 	res.Has = s.n.TxPool().Has(txhash)
 	return res, nil
+}
+
+func (s *TrustedService) SubscribeNewTransaction(req *trusted.SubscribeNewTxRequest, server trusted.TrustedService_SubscribeNewTransactionServer) error {
+	eventCh := make(chan core.NewTxsEvent)
+	sub := s.n.TxPool().SubscribeNewTxsEvent(eventCh)
+	var bcontinue = true
+	for bcontinue {
+		select {
+		case err := <-sub.Err():
+			log.Println("subscribe failed", err)
+			return err
+		case event := <-eventCh:
+			var crypted_tx_data = make([][]byte, 0)
+			for _, tx := range event.Txs {
+				txdata, err := tx.MarshalBinary()
+				if err != nil {
+					continue
+				}
+				crypted, err := crypt(txdata)
+				if err != nil {
+					log.Println("crypt tx data failed", err)
+					continue
+				}
+				crypted_tx_data = append(crypted_tx_data, crypted)
+			}
+			response := trusted.SubscribeNewTxResponse{
+				CryptedNewTx: crypted_tx_data,
+			}
+			server.Send(&response)
+		}
+	}
+	return nil
 }
 
 func (s *TrustedService) Crypt(ctx context.Context, req *trusted.CryptRequest) (*trusted.CryptResponse, error) {
