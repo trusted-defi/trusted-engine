@@ -2,17 +2,16 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	corecmn "github.com/trusted-defi/trusted-engine/core/common"
+	"github.com/trusted-defi/trusted-engine/core/mempool"
 	"github.com/trusted-defi/trusted-engine/node"
 	trusted "github.com/trusted-defi/trusted-engine/protocol/generate/trusted/v1"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"math/big"
 	"net"
 )
 
@@ -21,48 +20,173 @@ type TrustedService struct {
 	trusted.UnimplementedTrustedServiceServer
 }
 
-func (s *TrustedService) HealthCheck(ctx context.Context, req *emptypb.Empty) (*trusted.HealthCheckResponse, error) {
-	res := new(trusted.HealthCheckResponse)
-	res.Status = true
-	return res, nil
-}
-func (s *TrustedService) AddTx(ctx context.Context, req *trusted.AddTxRequest) (*trusted.AddTxResponse, error) {
-	res := new(trusted.AddTxResponse)
-	tx := corecmn.ParseTxData(req.Txdata)
-	if tx != nil {
-		err := s.n.TxPool().AddLocal(tx)
-		if err != nil {
-			res.Error = err.Error()
-		}
-		res.Txhash = tx.Hash().Bytes()
-	} else {
-		res.Error = errors.New("invalid tx data").Error()
+func parseTxStatus(status []mempool.TxStatus) []uint32 {
+	s := make([]uint32, 0, len(status))
+	for _, st := range status {
+		s = append(s, uint32(st))
 	}
+	return s
+}
+func parseHashs(hashs_data [][]byte) []common.Hash {
+	hashs := make([]common.Hash, 0, len(hashs_data))
+	for _, hash_data := range hashs_data {
+		h := common.BytesToHash(hash_data)
+		hashs = append(hashs, h)
+	}
+	return hashs
+}
+
+func parseErrs(errs []error) []string {
+	strs := make([]string, 0, len(errs))
+	for _, err := range errs {
+		strs = append(strs, err.Error())
+	}
+	return strs
+}
+
+func toBigInt(data []byte) *big.Int {
+	return new(big.Int).SetBytes(data)
+}
+
+func parseListToTransactions(list *trusted.TransactionList) []*types.Transaction {
+	txs := make([]*types.Transaction, 0, len(list.Txs))
+	for _, txdata := range list.Txs {
+		tx := corecmn.ParseTxData(txdata)
+		txs = append(txs, tx)
+	}
+	return txs
+}
+
+func sliceToList(account common.Address, txs types.Transactions) *trusted.AccountTransactionList {
+	txlist := &trusted.AccountTransactionList{
+		Address: account.Bytes(),
+		TxList: &trusted.TransactionList{
+			Txs: make([][]byte, 0, len(txs)),
+		},
+	}
+	for _, tx := range txs {
+		if encode, err := tx.MarshalBinary(); err != nil {
+			//
+		} else {
+			txlist.TxList.Txs = append(txlist.TxList.Txs, encode)
+		}
+	}
+	return txlist
+}
+
+func maptxToList(account_txs map[common.Address]types.Transactions) []*trusted.AccountTransactionList {
+	txlists := make([]*trusted.AccountTransactionList, 0, len(account_txs))
+	for addr, txs := range account_txs {
+		txlist := sliceToList(addr, txs)
+		txlists = append(txlists, txlist)
+	}
+	return txlists
+}
+
+func parseAddrsToBytes(accounts []common.Address) [][]byte {
+	account_data := make([][]byte, 0, len(accounts))
+	for _, account := range accounts {
+		data := account.Bytes()
+		account_data = append(account_data, data)
+	}
+	return account_data
+}
+
+func (s *TrustedService) PoolSetPrice(ctx context.Context, req *trusted.SetPriceRequest) (*emptypb.Empty, error) {
+	s.n.TxPool().SetGasPrice(toBigInt(req.Price))
+	return nil, nil
+}
+
+func (s *TrustedService) PoolGasPrice(ctx context.Context, req *emptypb.Empty) (*trusted.GasPriceResponse, error) {
+	res := new(trusted.GasPriceResponse)
+	res.Price = s.n.TxPool().GasPrice().Bytes()
+	return res, nil
+}
+
+func (s *TrustedService) PendingNonce(ctx context.Context, req *trusted.PendingNonceRequest) (*trusted.PendingNonceResponse, error) {
+	addr := common.BytesToAddress(req.Address)
+	nonce := s.n.TxPool().Nonce(addr)
+	res := new(trusted.PendingNonceResponse)
+	res.Nonce = nonce
 
 	return res, nil
 }
 
-func (s *TrustedService) Status(ctx context.Context, req *trusted.StatusRequest) (*trusted.StatusResponse, error) {
+func (s *TrustedService) PoolStat(ctx context.Context, req *emptypb.Empty) (*trusted.PoolStatResponse, error) {
+	res := new(trusted.PoolStatResponse)
 	pending, queue := s.n.TxPool().Stats()
-	res := new(trusted.StatusResponse)
 	res.Pending = uint64(pending)
 	res.Queue = uint64(queue)
 	return res, nil
 }
-func (s *TrustedService) Reset(ctx context.Context, req *trusted.ResetRequest) (*trusted.ResetResponse, error) {
 
-	return nil, status.Errorf(codes.Unimplemented, "method Reset not implemented")
+func (s *TrustedService) PoolContent(ctx context.Context, req *trusted.PoolContentRequest) (*trusted.PoolContentResponse, error) {
+	pendings, queue := s.n.TxPool().Content()
+	res := new(trusted.PoolContentResponse)
+	res.PendingList = maptxToList(pendings)
+	res.QueueList = maptxToList(queue)
+
+	return res, nil
 }
-func (s *TrustedService) Pending(ctx context.Context, req *trusted.PendingRequest) (*trusted.PendingResponse, error) {
-	alltxs := s.n.TxPool().Pending(false)
-	res := new(trusted.PendingResponse)
-	res.Txs = make([][]byte, 0)
-	for _, txs := range alltxs {
-		for _, tx := range txs {
-			d, _ := tx.MarshalBinary()
-			res.Txs = append(res.Txs, d)
-		}
-	}
+func (s *TrustedService) PoolContentFrom(ctx context.Context, req *trusted.PoolContentRequest) (*trusted.PoolContentResponse, error) {
+	from := common.BytesToAddress(req.Address)
+	res := new(trusted.PoolContentResponse)
+	pendings, queue := s.n.TxPool().ContentFrom(from)
+	res.PendingList = []*trusted.AccountTransactionList{sliceToList(from, pendings)}
+	res.QueueList = []*trusted.AccountTransactionList{sliceToList(from, queue)}
+	return res, nil
+}
+
+func (s *TrustedService) PoolPending(ctx context.Context, req *emptypb.Empty) (*trusted.PoolPendingResponse, error) {
+	pending := s.n.TxPool().Pending(false)
+	list := maptxToList(pending)
+	res := new(trusted.PoolPendingResponse)
+	res.PendingList = list
+	return res, nil
+}
+
+func (s *TrustedService) PoolLocals(ctx context.Context, req *emptypb.Empty) (*trusted.PoolLocalsResponse, error) {
+	locals := s.n.TxPool().Locals()
+	res := new(trusted.PoolLocalsResponse)
+	res.AddressList = parseAddrsToBytes(locals)
+	return res, nil
+}
+
+func (s *TrustedService) AddLocalsTx(ctx context.Context, req *trusted.AddTxsRequest) (*trusted.AddTxsResponse, error) {
+	txs := parseListToTransactions(req.TxList)
+	errs := s.n.TxPool().AddLocals(txs)
+	res := new(trusted.AddTxsResponse)
+	res.Errors = parseErrs(errs)
+	return res, nil
+}
+
+func (s *TrustedService) AddRemoteTx(ctx context.Context, req *trusted.AddTxsRequest) (*trusted.AddTxsResponse, error) {
+	txs := parseListToTransactions(req.TxList)
+	errs := s.n.TxPool().AddRemotes(txs)
+	res := new(trusted.AddTxsResponse)
+	res.Errors = parseErrs(errs)
+	return res, nil
+}
+
+func (s *TrustedService) TxStatus(ctx context.Context, req *trusted.TxStatusRequest) (*trusted.TxStatusResponse, error) {
+	txhashs := parseHashs(req.TxHashs)
+	txstatus := s.n.TxPool().Status(txhashs)
+	res := new(trusted.TxStatusResponse)
+	res.TxStatus = parseTxStatus(txstatus)
+	return res, nil
+}
+
+func (s *TrustedService) TxGet(ctx context.Context, req *trusted.TxGetRequest) (*trusted.TxGetResponse, error) {
+	txhash := common.BytesToHash(req.TxHash)
+	tx := s.n.TxPool().Get(txhash)
+	res := new(trusted.TxGetResponse)
+	res.Tx, _ = tx.MarshalBinary()
+	return res, nil
+}
+func (s *TrustedService) TxHas(ctx context.Context, req *trusted.TxHasRequest) (*trusted.TxHasResponse, error) {
+	txhash := common.BytesToHash(req.TxHash)
+	res := new(trusted.TxHasResponse)
+	res.Has = s.n.TxPool().Has(txhash)
 	return res, nil
 }
 

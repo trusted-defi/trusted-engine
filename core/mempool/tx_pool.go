@@ -89,9 +89,9 @@ const (
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
 type TxPoolConfig struct {
-	NoLocals  bool             // Whether local transaction handling should be disabled
-	Journal   string           // Journal of local transactions to survive node restarts
-	Rejournal time.Duration    // Time interval to regenerate the local transaction journal
+	NoLocals  bool          // Whether local transaction handling should be disabled
+	Journal   string        // Journal of local transactions to survive node restarts
+	Rejournal time.Duration // Time interval to regenerate the local transaction journal
 
 	PriceLimit uint64 // Minimum gas price to enforce for acceptance into the pool
 	PriceBump  uint64 // Minimum price bump percentage to replace an already existing transaction (nonce)
@@ -168,22 +168,22 @@ func (config *TxPoolConfig) sanitize() TxPoolConfig {
 // current state) and future transactions. Transactions move between those
 // two states over time as they are received and processed.
 type TxPool struct {
-	ctx			context.Context
+	ctx         context.Context
 	config      TxPoolConfig
 	chainconfig *params.ChainConfig
 
-	chainHeadCh     chan core.ChainHeadEvent
-	chainHeadSub    event.Subscription
-	gasPrice    *big.Int
-	signer      types.Signer
-	mu          sync.RWMutex
+	chainHeadCh  chan core.ChainHeadEvent
+	chainHeadSub event.Subscription
+	gasPrice     *big.Int
+	signer       types.Signer
+	mu           sync.RWMutex
 
 	istanbul bool // Fork indicator whether we are in the istanbul stage.
 	eip2718  bool // Fork indicator whether we are using EIP-2718 type transactions.
 	eip1559  bool // Fork indicator whether we are using EIP-1559 type transactions.
 
-	pendingNonces *txNoncer      // Pending state tracking virtual nonces
-	currentMaxGas uint64         // Current gas limit for transaction caps
+	pendingNonces *txNoncer // Pending state tracking virtual nonces
+	currentMaxGas uint64    // Current gas limit for transaction caps
 
 	locals  *accountSet // Set of local transaction to exempt from eviction rules
 	journal *txJournal  // Journal of local transaction to back up to disk
@@ -204,7 +204,7 @@ type TxPool struct {
 
 	changesSinceReorg int // A counter for how many drops we've performed in-between reorg.
 
-	chainclient 	*ChainClient
+	chainclient *ChainClient
 }
 
 type txpoolResetRequest struct {
@@ -365,6 +365,27 @@ func (pool *TxPool) GasPrice() *big.Int {
 	defer pool.mu.RUnlock()
 
 	return new(big.Int).Set(pool.gasPrice)
+}
+
+// SetGasPrice updates the minimum price required by the transaction pool for a
+// new transaction, and drops all transactions below this threshold.
+func (pool *TxPool) SetGasPrice(price *big.Int) {
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
+
+	old := pool.gasPrice
+	pool.gasPrice = price
+	// if the min miner fee increased, remove transactions below the new threshold
+	if price.Cmp(old) > 0 {
+		// pool.priced is sorted by GasFeeCap, so we have to iterate through pool.all instead
+		drop := pool.all.RemotesBelowTip(price)
+		for _, tx := range drop {
+			pool.removeTx(tx.Hash(), false)
+		}
+		pool.priced.Removed(len(drop))
+	}
+
+	log.Info("Transaction pool price threshold updated", "price", price)
 }
 
 // Nonce returns the next nonce of an account, with all transactions executable
@@ -1644,7 +1665,6 @@ func (t *txLookup) Remove(hash common.Hash) {
 	delete(t.remotes, hash)
 }
 
-
 // RemoteToLocals migrates the transactions belongs to the given locals to locals
 // set. The assumption is held the locals set is thread-safe to be used.
 func (t *txLookup) RemoteToLocals(locals *accountSet) int {
@@ -1673,7 +1693,6 @@ func (t *txLookup) RemotesBelowTip(threshold *big.Int) types.Transactions {
 	}, false, true) // Only iterate remotes
 	return found
 }
-
 
 // numSlots calculates the number of slots needed for a single transaction.
 func numSlots(tx *types.Transaction) int {
