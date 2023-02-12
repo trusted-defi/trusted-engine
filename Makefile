@@ -4,7 +4,7 @@ PROTO_GO_FILES = $(shell find . -path -prune -o -type f -name '*.pb.go' -print |
 DEST=${PWD}
 BIN=trustedengine
 
-.PHONY: all bin proto build deps clean
+.PHONY: all bin proto build deps clean sim run host
 
 all: proto bin
 
@@ -14,6 +14,15 @@ bin:
 
 build: $(PROTO_GO_FILES)
 	@buf build
+
+sim:
+	OE_SIMULATION=1 ego run ${BIN}
+
+run:
+	ego run ${BIN}
+
+host:
+	go build -o=host_${BIN} ./cmd/trustedengine
 
 proto: build
 	@buf generate

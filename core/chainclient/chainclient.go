@@ -1,8 +1,9 @@
-package mempool
+package chainclient
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -14,6 +15,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"math/big"
+	"time"
 )
 
 type ChainClient struct {
@@ -21,29 +23,37 @@ type ChainClient struct {
 
 	chainHeadFeed event.Feed
 	scope         event.SubscriptionScope
-
-	ctx context.Context
+	quit          chan struct{}
+	ctx           context.Context
 }
 
-func NewChainClient(conf *config.Config) (*ChainClient, error){
-	c,err := grpc.Dial(conf.ChainServerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func NewChainClient(conf *config.Config) (*ChainClient, error) {
+	c, err := grpc.Dial(conf.ChainServerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, errors.New("dial server failed")
 	}
+
+	log.Info("grpc connected")
 	client := new(ChainClient)
 	client.ctx = context.Background()
 	client.cclient = trusted.NewChainServiceClient(c)
-	go client.loop()
+	client.quit = make(chan struct{})
+	client.Start()
+
 	return client, nil
 }
 
-func (client *ChainClient) CurrentBlock() *types.Block {
+func (client *ChainClient) Start() {
+	go client.loop()
+}
+
+func (client *ChainClient) CurrentBlock() (*types.Block, error) {
 	latest, err := client.cclient.CurrentBlock(client.ctx, new(trusted.CurrentBlockRequest), grpc.EmptyCallOption{})
 	if err != nil {
 		log.Error("get current block failed", "err", err)
-		return nil
+		return nil, err
 	}
-	return corecmn.ParseBlockData(latest.BlockData)
+	return corecmn.ParseBlockData(latest.BlockData), nil
 }
 
 func (client *ChainClient) GetBlock(hash common.Hash, number uint64) *types.Block {
@@ -81,7 +91,6 @@ func (client *ChainClient) NonceAtHeight(addr common.Address, height *big.Int) u
 	return corecmn.ParseNonce(nonce)
 }
 
-
 func (client *ChainClient) NonceAt(addr common.Address) uint64 {
 	req := new(trusted.NonceRequest)
 	req.Address = addr.Bytes()
@@ -97,13 +106,29 @@ func (client *ChainClient) SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent
 	return client.scope.Track(client.chainHeadFeed.Subscribe(ch))
 }
 
-func (client *ChainClient) loop () {
+func (client *ChainClient) loop() {
 	for {
-		sub, _ := client.cclient.ChainHeadEvent(client.ctx, new(trusted.ChainHeadEventRequest))
-		for {
+		subsucceed := false
+		sub, err := client.cclient.ChainHeadEvent(client.ctx, new(trusted.ChainHeadEventRequest))
+		if err != nil {
+			fmt.Println("chain head event subscribe failed", "err", err)
+			log.Error("chain head event subscribe failed", "err", err)
+			time.Sleep(time.Second)
+			continue
+		}
+		subsucceed = true
+		for subsucceed {
+			select {
+			case <-client.quit:
+				log.Info("chain client quit")
+				return
+			default:
+
+			}
+
 			if res, err := sub.Recv(); err != nil {
 				log.Info("chain head event receive failed", "err", err)
-				break
+				subsucceed = false
 			} else {
 				client.chainHeadFeed.Send(core.ChainHeadEvent{
 					Block: corecmn.ParseBlockData(res.BlockData),

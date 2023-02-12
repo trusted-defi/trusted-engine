@@ -96,6 +96,12 @@ func parseAddrsToBytes(accounts []common.Address) [][]byte {
 	return account_data
 }
 
+func (s *TrustedService) ServiceReady(ctx context.Context, req *emptypb.Empty) (*trusted.ServiceReadyResponse, error) {
+	res := new(trusted.ServiceReadyResponse)
+	res.Ready = s.n.IsReady()
+	return res, nil
+}
+
 func (s *TrustedService) PoolSetPrice(ctx context.Context, req *trusted.SetPriceRequest) (*emptypb.Empty, error) {
 	s.n.TxPool().SetGasPrice(toBigInt(req.Price))
 	return nil, nil
@@ -301,7 +307,7 @@ func RegisterService(server *grpc.Server, n *node.Node) {
 }
 
 func StartTrustedService(n *node.Node) {
-	lis, err := net.Listen("tcp", ":38000")
+	lis, err := net.Listen("tcp", ":3802")
 	if err != nil {
 		fmt.Printf("failed to listen: %v", err)
 		return

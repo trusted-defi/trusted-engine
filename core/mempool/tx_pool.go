@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/trusted-defi/trusted-engine/config"
+	"github.com/trusted-defi/trusted-engine/core/chainclient"
 	"math"
 	"math/big"
 	"sort"
@@ -206,7 +207,7 @@ type TxPool struct {
 
 	changesSinceReorg int // A counter for how many drops we've performed in-between reorg.
 
-	chainclient *ChainClient
+	chainclient *chainclient.ChainClient
 }
 
 type txpoolResetRequest struct {
@@ -243,14 +244,16 @@ func NewTxPool(conf TxPoolConfig, chainconfig *params.ChainConfig) *TxPool {
 		gasPrice:        new(big.Int).SetUint64(conf.PriceLimit),
 	}
 	var err error
-	pool.chainclient, err = NewChainClient(config.GetConfig())
+	pool.chainclient, err = chainclient.NewChainClient(config.GetConfig())
 	if err != nil {
 		log.Error("create chain client failed", "err", err)
 		return nil
 	}
 	pool.locals = newAccountSet(pool.signer)
 	pool.priced = newTxPricedList(pool.all)
-	pool.reset(nil, pool.chainclient.CurrentBlock().Header())
+	if currentBlock, _ := pool.chainclient.CurrentBlock(); currentBlock != nil {
+		pool.reset(nil, currentBlock.Header())
+	}
 
 	// Start the reorg loop early so it can handle requests generated during journal loading.
 	pool.wg.Add(1)
@@ -276,6 +279,10 @@ func NewTxPool(conf TxPoolConfig, chainconfig *params.ChainConfig) *TxPool {
 	return pool
 }
 
+func (pool *TxPool) IsReady() bool {
+	return true
+}
+
 // loop is the transaction pool's main event loop, waiting for and reacting to
 // outside blockchain events as well as for various reporting and transaction
 // eviction events.
@@ -289,7 +296,7 @@ func (pool *TxPool) loop() {
 		evict   = time.NewTicker(evictionInterval)
 		journal = time.NewTicker(pool.config.Rejournal)
 		// Track the previous head headers for transaction reorgs
-		head = pool.chainclient.CurrentBlock()
+		head, _ = pool.chainclient.CurrentBlock()
 	)
 	defer report.Stop()
 	defer evict.Stop()
@@ -301,8 +308,13 @@ func (pool *TxPool) loop() {
 		select {
 		// Handle ChainHeadEvent
 		case ev := <-pool.chainHeadCh:
+			var last *types.Header = nil
+			if head != nil {
+				last = head.Header()
+			}
+
 			if ev.Block != nil {
-				pool.requestReset(head.Header(), ev.Block.Header())
+				pool.requestReset(last, ev.Block.Header())
 				head = ev.Block
 			}
 
@@ -1196,7 +1208,13 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 	}
 	// Initialize the internal state to the current head
 	if newHead == nil {
-		newHead = pool.chainclient.CurrentBlock().Header() // Special case during testing
+		current, _ := pool.chainclient.CurrentBlock() // Special case during testing
+		if current != nil {
+			newHead = current.Header()
+		} else {
+			log.Error(" newhead is not set, run out reset.")
+			return
+		}
 	}
 	pool.pendingNonces = newTxNoncer(newHead.Number, pool.chainclient)
 	pool.currentMaxGas = newHead.GasLimit

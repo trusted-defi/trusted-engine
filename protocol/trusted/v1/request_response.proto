@@ -5,6 +5,10 @@ package trusted.v1;
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
+message ServiceReadyResponse {
+    bool ready = 1;
+}
+
 message SetPriceRequest {
     bytes price = 1;
 }

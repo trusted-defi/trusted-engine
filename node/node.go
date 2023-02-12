@@ -16,3 +16,7 @@ func NewNode() *Node {
 func (n *Node) TxPool() *mempool.TxPool {
 	return n.txpool
 }
+
+func (n *Node) IsReady() bool {
+	return n.txpool.IsReady()
+}

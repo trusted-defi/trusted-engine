@@ -1,8 +1,11 @@
 package common
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 	trusted "github.com/trusted-defi/trusted-engine/protocol/generate/trusted/v1"
 	"math/big"
 )
@@ -19,10 +22,13 @@ func ParseBlockHeader(response *trusted.LatestHeaderResponse) *types.Header {
 }
 
 func ParseBlockData(blockdata []byte) *types.Block {
-	var block *types.Block
+	var block = new(types.Block)
 	if len(blockdata) > 0 {
-		err := json.Unmarshal(blockdata, &block)
+		buffer := bytes.NewBuffer(make([]byte, 0))
+		buffer.Write(blockdata)
+		err := rlp.Decode(buffer, &block)
 		if err != nil {
+			fmt.Println("parse block failed", "err", err)
 			return nil
 		}
 	}

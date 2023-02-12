@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	chainclient2 "github.com/trusted-defi/trusted-engine/core/chainclient"
 	"math/big"
 	"sync"
 
@@ -11,18 +12,18 @@ import (
 // accounts in the pool, falling back to reading from a real state database if
 // an account is unknown.
 type txNoncer struct {
-	height *big.Int
-	nonces   map[common.Address]uint64
-	chainclient *ChainClient
-	lock     sync.Mutex
+	height      *big.Int
+	nonces      map[common.Address]uint64
+	chainclient *chainclient2.ChainClient
+	lock        sync.Mutex
 }
 
 // newTxNoncer creates a new virtual state database to track the pool nonces.
-func newTxNoncer(height *big.Int, chain *ChainClient) *txNoncer {
+func newTxNoncer(height *big.Int, chain *chainclient2.ChainClient) *txNoncer {
 	return &txNoncer{
-		height: height,
+		height:      height,
 		chainclient: chain,
-		nonces:   make(map[common.Address]uint64),
+		nonces:      make(map[common.Address]uint64),
 	}
 }
 
