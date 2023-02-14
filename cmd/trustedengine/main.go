@@ -29,6 +29,7 @@ func main() {
 		formatter.FullTimestamp = true
 		formatter.DisableColors = true
 		logrus.SetFormatter(formatter)
+		logrus.SetLevel(logrus.TraceLevel)
 
 		runtime.GOMAXPROCS(runtime.NumCPU())
 		return nil

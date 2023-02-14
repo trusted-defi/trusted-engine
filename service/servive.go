@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/sirupsen/logrus"
 	corecmn "github.com/trusted-defi/trusted-engine/core/common"
 	"github.com/trusted-defi/trusted-engine/core/mempool"
 	"github.com/trusted-defi/trusted-engine/node"
@@ -14,10 +15,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"log"
 	"math/big"
 	"net"
 )
+
+var log = logrus.WithField("prefix", "service")
 
 type TrustedService struct {
 	n *node.Node
@@ -43,7 +45,11 @@ func parseHashs(hashs_data [][]byte) []common.Hash {
 func parseErrs(errs []error) []string {
 	strs := make([]string, 0, len(errs))
 	for _, err := range errs {
-		strs = append(strs, err.Error())
+		if err == nil {
+			strs = append(strs, "")
+		} else {
+			strs = append(strs, err.Error())
+		}
 	}
 	return strs
 }
@@ -125,6 +131,8 @@ func (s *TrustedService) PendingNonce(ctx context.Context, req *trusted.PendingN
 func (s *TrustedService) PoolStat(ctx context.Context, req *emptypb.Empty) (*trusted.PoolStatResponse, error) {
 	res := new(trusted.PoolStatResponse)
 	pending, queue := s.n.TxPool().Stats()
+	//log.WithField("pending", pending).WithField("queue", queue).Info("txpool stat")
+	log.WithField("pending", pending).Info("txpool stat")
 	res.Pending = uint64(pending)
 	res.Queue = uint64(queue)
 	return res, nil

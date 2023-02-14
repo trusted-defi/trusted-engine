@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/ethereum/go-ethereum/core"
+	"github.com/sirupsen/logrus"
 	"github.com/trusted-defi/trusted-engine/config"
 	"github.com/trusted-defi/trusted-engine/core/chainclient"
 	"math"
@@ -18,9 +19,10 @@ import (
 	"github.com/ethereum/go-ethereum/consensus/misc"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 )
+
+var log = logrus.WithField("prefix", "pool")
 
 const (
 	// chainHeadChanSize is the size of channel listening to ChainHeadEvent.
