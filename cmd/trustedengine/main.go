@@ -1,17 +1,14 @@
 package main
 
 import (
-	"github.com/sirupsen/logrus"
 	"github.com/trusted-defi/trusted-engine/cmd/trustedengine/version"
+	"github.com/trusted-defi/trusted-engine/log"
 	"github.com/trusted-defi/trusted-engine/node"
 	"github.com/trusted-defi/trusted-engine/service"
-	"github.com/trusted-defi/trusted-engine/tools"
 	"github.com/urfave/cli/v2"
 	"os"
 	"runtime"
 )
-
-var log = logrus.WithField("prefix", "main")
 
 func main() {
 	app := cli.App{}
@@ -20,18 +17,16 @@ func main() {
 	app.Action = startNode
 	app.Version = version.Version()
 	app.Commands = []*cli.Command{}
+	app.Flags = []cli.Flag{
+		&cli.BoolFlag{
+			Name:  "generate",
+			Value: false,
+			Usage: "generate test secretdb",
+		},
+	}
 	//app.Flags = appFlags
 
 	app.Before = func(ctx *cli.Context) error {
-		// init log
-		formatter := new(tools.TextFormatter)
-		formatter.TimestampFormat = "2006-01-02 15:04:05"
-		formatter.FullTimestamp = true
-		formatter.DisableColors = true
-		logrus.SetFormatter(formatter)
-		logrus.SetLevel(logrus.TraceLevel)
-
-		runtime.GOMAXPROCS(runtime.NumCPU())
 		return nil
 	}
 
@@ -47,8 +42,13 @@ func main() {
 }
 
 func startNode(ctx *cli.Context) error {
+	// init log
+	log.InitLog()
+
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	log.Info("start node")
-	n := node.NewNode()
+	n := node.NewNode(ctx.Bool("generate"))
 	service.StartTrustedService(n)
 	return nil
 }

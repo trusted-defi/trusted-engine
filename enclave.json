@@ -6,7 +6,11 @@
  "executableHeap": true,
  "productID": 1,
  "securityVersion": 1,
- "mounts": null,
+ "mounts": [{
+  "source": "nodedata",
+  "target": "nodedata",
+  "type": "hostfs"
+ }],
  "env": null,
  "files": null
 }

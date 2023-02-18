@@ -9,6 +9,7 @@ import (
 	"github.com/trusted-defi/trusted-engine/core/chainclient"
 	"math"
 	"math/big"
+	"path/filepath"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -218,7 +219,7 @@ type txpoolResetRequest struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(conf TxPoolConfig, chainconfig *params.ChainConfig) *TxPool {
+func NewTxPool(conf TxPoolConfig, chainconfig *params.ChainConfig, nodedir string) *TxPool {
 
 	if chainconfig == nil {
 		chainconfig = params.MainnetChainConfig
@@ -263,7 +264,8 @@ func NewTxPool(conf TxPoolConfig, chainconfig *params.ChainConfig) *TxPool {
 
 	// If local transactions and journaling is enabled, load from disk
 	if !conf.NoLocals && conf.Journal != "" {
-		pool.journal = newTxJournal(conf.Journal)
+		jourpath := filepath.Join(nodedir, conf.Journal)
+		pool.journal = newTxJournal(jourpath)
 
 		if err := pool.journal.load(pool.AddLocals); err != nil {
 			log.Warn("Failed to load transaction journal", "err", err)

@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/sirupsen/logrus"
 	corecmn "github.com/trusted-defi/trusted-engine/core/common"
+	"github.com/trusted-defi/trusted-engine/core/cryptor"
 	"github.com/trusted-defi/trusted-engine/core/mempool"
 	"github.com/trusted-defi/trusted-engine/node"
 	trusted "github.com/trusted-defi/trusted-engine/protocol/generate/trusted/v1"
@@ -224,7 +226,7 @@ func (s *TrustedService) SubscribeNewTransaction(req *trusted.SubscribeNewTxRequ
 				if err != nil {
 					continue
 				}
-				crypted, err := crypt(txdata)
+				crypted, err := s.crypt(txdata)
 				if err != nil {
 					log.Println("crypt tx data failed", err)
 					continue
@@ -243,7 +245,7 @@ func (s *TrustedService) SubscribeNewTransaction(req *trusted.SubscribeNewTxRequ
 func (s *TrustedService) Crypt(ctx context.Context, req *trusted.CryptRequest) (*trusted.CryptResponse, error) {
 	var err error
 	res := new(trusted.CryptResponse)
-	res.Crypted, err = crypt(req.GetData())
+	res.Crypted, err = s.crypt(req.GetData())
 	if err != nil {
 		return nil, err
 	}
@@ -255,19 +257,27 @@ func generateTxAsset(tx *types.Transaction) []byte {
 	return []byte{1}
 }
 
-func crypt(data []byte) ([]byte, error) {
-	// todo: change crypt method to sgx.
-	return data, nil
+func (s *TrustedService) crypt(data []byte) ([]byte, error) {
+	sdb := s.n.GetSecretDB()
+	if sdb != nil {
+		return cryptor.Encrypt(data, sdb.PublicKey())
+	} else {
+		return nil, errors.New("public key not found")
+	}
 }
 
-func decrypt(data []byte) ([]byte, error) {
-	// todo: change decrypt method to sgx.
-	return data, nil
+func (s *TrustedService) decrypt(data []byte) ([]byte, error) {
+	sdb := s.n.GetSecretDB()
+	if sdb != nil {
+		return cryptor.Decrypt(data, sdb.PrivateKey())
+	} else {
+		return nil, errors.New("private key not found")
+	}
 }
 func (s *TrustedService) AddLocalTrustedTx(ctx context.Context, req *trusted.AddTrustedTxRequest) (*trusted.AddTrustedTxResponse, error) {
 	res := new(trusted.AddTrustedTxResponse)
 	tx := new(types.Transaction)
-	txdata, err := decrypt(req.GetCtyptedTx())
+	txdata, err := s.decrypt(req.GetCtyptedTx())
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +297,7 @@ func (s *TrustedService) AddLocalTrustedTx(ctx context.Context, req *trusted.Add
 func (s *TrustedService) AddRemoteTrustedTx(ctx context.Context, req *trusted.AddTrustedTxRequest) (*trusted.AddTrustedTxResponse, error) {
 	res := new(trusted.AddTrustedTxResponse)
 	tx := new(types.Transaction)
-	txdata, err := decrypt(req.GetCtyptedTx())
+	txdata, err := s.decrypt(req.GetCtyptedTx())
 	if err != nil {
 		return nil, err
 	}

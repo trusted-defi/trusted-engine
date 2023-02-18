@@ -3,14 +3,13 @@ package chainclient
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/trusted-defi/trusted-engine/config"
 	corecmn "github.com/trusted-defi/trusted-engine/core/common"
+	"github.com/trusted-defi/trusted-engine/log"
 	trusted "github.com/trusted-defi/trusted-engine/protocol/generate/trusted/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -111,7 +110,6 @@ func (client *ChainClient) loop() {
 		subsucceed := false
 		sub, err := client.cclient.ChainHeadEvent(client.ctx, new(trusted.ChainHeadEventRequest))
 		if err != nil {
-			fmt.Println("chain head event subscribe failed", "err", err)
 			log.Error("chain head event subscribe failed", "err", err)
 			time.Sleep(time.Second)
 			continue

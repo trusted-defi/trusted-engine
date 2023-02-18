@@ -3,9 +3,11 @@ module github.com/trusted-defi/trusted-engine
 go 1.18
 
 require (
+	github.com/edgelesssys/ego v1.1.0
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/gogo/protobuf v1.3.2
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
+	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/sirupsen/logrus v1.9.0
 	github.com/urfave/cli/v2 v2.10.2
 	golang.org/x/crypto v0.4.0
@@ -47,6 +49,7 @@ require (
 	golang.org/x/text v0.5.0 // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
+	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 )
 
 //replace github.com/ethereum/go-ethereum => ../go-ethereum

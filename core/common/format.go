@@ -3,9 +3,9 @@ package common
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/trusted-defi/trusted-engine/log"
 	trusted "github.com/trusted-defi/trusted-engine/protocol/generate/trusted/v1"
 	"math/big"
 )
@@ -28,7 +28,7 @@ func ParseBlockData(blockdata []byte) *types.Block {
 		buffer.Write(blockdata)
 		err := rlp.Decode(buffer, &block)
 		if err != nil {
-			fmt.Println("parse block failed", "err", err)
+			log.WithField("error", err).Error("parse block failed")
 			return nil
 		}
 	}
