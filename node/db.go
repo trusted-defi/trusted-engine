@@ -5,8 +5,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/ecies"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/trusted-defi/trusted-engine/core/cryptor"
+	"github.com/trusted-defi/trusted-engine/log"
 	"os"
 )
 
@@ -46,7 +46,7 @@ func GenerateDB(path string) *SecretDb {
 		log.Error("save db failed", "err", err)
 		return nil
 	}
-	log.Info("generate private key")
+	log.WithField("pk", hexk).Info("generate private key")
 	return db
 }
 
@@ -54,11 +54,13 @@ func LoadDb(path string) *SecretDb {
 	// read file content
 	data, err := os.ReadFile(path)
 	if err != nil || len(data) == 0 {
+		log.WithField("error", err).Error("loadDB read file failed")
 		return nil
 	}
 	// decrypt
 	pt, err := cryptor.EnclaveDecrypt(data)
 	if err != nil {
+		log.WithField("error", err).Error("loadDB decrypt failed")
 		return nil
 	}
 
@@ -66,9 +68,11 @@ func LoadDb(path string) *SecretDb {
 
 	// json unmarshal
 	if err = json.Unmarshal(pt, sdb); err != nil {
+		log.WithField("error", err).Error("loadDB json unmarshal failed")
 		return nil
 	}
 	sdb.privk, _ = cryptor.HexToPrivkey(sdb.PK)
+	log.WithField("pk", sdb.PK).Info("load private key")
 	return sdb
 }
 

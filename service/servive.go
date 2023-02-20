@@ -277,6 +277,7 @@ func (s *TrustedService) decrypt(data []byte) ([]byte, error) {
 func (s *TrustedService) AddLocalTrustedTx(ctx context.Context, req *trusted.AddTrustedTxRequest) (*trusted.AddTrustedTxResponse, error) {
 	res := new(trusted.AddTrustedTxResponse)
 	tx := new(types.Transaction)
+	log.WithField("tx", common.Bytes2Hex(req.CtyptedTx)).Info("add trusted tx")
 	txdata, err := s.decrypt(req.GetCtyptedTx())
 	if err != nil {
 		return nil, err
@@ -287,10 +288,15 @@ func (s *TrustedService) AddLocalTrustedTx(ctx context.Context, req *trusted.Add
 		res.Asset = make([]byte, 0)
 		return res, err
 	}
-	// todo: add check tx and add local tx to txpool.
-
-	res.Hash = tx.Hash().Bytes()
-	res.Asset = generateTxAsset(tx)
+	errs := s.n.TxPool().AddLocals([]*types.Transaction{tx})
+	if errs[0] == nil {
+		log.WithField("hash", tx.Hash()).Info("add trusted tx succeed")
+		res.Hash = tx.Hash().Bytes()
+		res.Asset = generateTxAsset(tx)
+	} else {
+		log.WithField("err", errs[0]).Info("add trusted tx failed")
+		return nil, errs[0]
+	}
 	return res, nil
 }
 
