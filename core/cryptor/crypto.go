@@ -19,6 +19,11 @@ func HexToPrivkey(str string) (*ecies.PrivateKey, error) {
 	return eck, nil
 }
 
+func PublicKeyToStr(pubkey ecies.PublicKey) string {
+	data := crypto.FromECDSAPub(pubkey.ExportECDSA())
+	return common.Bytes2Hex(data)
+}
+
 // GenerateKey generate private key and public key
 func GenerateKey() *ecies.PrivateKey {
 	pk, _ := ecies.GenerateKey(rand.Reader, ecies.DefaultCurve, nil)

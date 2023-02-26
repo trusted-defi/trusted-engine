@@ -44,8 +44,8 @@ type TrustedServiceClient interface {
 	TxHas(ctx context.Context, in *TxHasRequest, opts ...grpc.CallOption) (*TxHasResponse, error)
 	SubscribeNewTransaction(ctx context.Context, in *SubscribeNewTxRequest, opts ...grpc.CallOption) (TrustedService_SubscribeNewTransactionClient, error)
 	Crypt(ctx context.Context, in *CryptRequest, opts ...grpc.CallOption) (*CryptResponse, error)
-	AddLocalTrustedTx(ctx context.Context, in *AddTrustedTxRequest, opts ...grpc.CallOption) (*AddTrustedTxResponse, error)
-	AddRemoteTrustedTx(ctx context.Context, in *AddTrustedTxRequest, opts ...grpc.CallOption) (*AddTrustedTxResponse, error)
+	AddLocalTrustedTxs(ctx context.Context, in *AddTrustedTxsRequest, opts ...grpc.CallOption) (*AddTrustedTxsResponse, error)
+	AddRemoteTrustedTxs(ctx context.Context, in *AddTrustedTxsRequest, opts ...grpc.CallOption) (*AddTrustedTxsResponse, error)
 	FillBlock(ctx context.Context, in *FillBlockRequest, opts ...grpc.CallOption) (*FillBlockResponse, error)
 }
 
@@ -224,18 +224,18 @@ func (c *trustedServiceClient) Crypt(ctx context.Context, in *CryptRequest, opts
 	return out, nil
 }
 
-func (c *trustedServiceClient) AddLocalTrustedTx(ctx context.Context, in *AddTrustedTxRequest, opts ...grpc.CallOption) (*AddTrustedTxResponse, error) {
-	out := new(AddTrustedTxResponse)
-	err := c.cc.Invoke(ctx, "/trusted.v1.TrustedService/AddLocalTrustedTx", in, out, opts...)
+func (c *trustedServiceClient) AddLocalTrustedTxs(ctx context.Context, in *AddTrustedTxsRequest, opts ...grpc.CallOption) (*AddTrustedTxsResponse, error) {
+	out := new(AddTrustedTxsResponse)
+	err := c.cc.Invoke(ctx, "/trusted.v1.TrustedService/AddLocalTrustedTxs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *trustedServiceClient) AddRemoteTrustedTx(ctx context.Context, in *AddTrustedTxRequest, opts ...grpc.CallOption) (*AddTrustedTxResponse, error) {
-	out := new(AddTrustedTxResponse)
-	err := c.cc.Invoke(ctx, "/trusted.v1.TrustedService/AddRemoteTrustedTx", in, out, opts...)
+func (c *trustedServiceClient) AddRemoteTrustedTxs(ctx context.Context, in *AddTrustedTxsRequest, opts ...grpc.CallOption) (*AddTrustedTxsResponse, error) {
+	out := new(AddTrustedTxsResponse)
+	err := c.cc.Invoke(ctx, "/trusted.v1.TrustedService/AddRemoteTrustedTxs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -276,8 +276,8 @@ type TrustedServiceServer interface {
 	TxHas(context.Context, *TxHasRequest) (*TxHasResponse, error)
 	SubscribeNewTransaction(*SubscribeNewTxRequest, TrustedService_SubscribeNewTransactionServer) error
 	Crypt(context.Context, *CryptRequest) (*CryptResponse, error)
-	AddLocalTrustedTx(context.Context, *AddTrustedTxRequest) (*AddTrustedTxResponse, error)
-	AddRemoteTrustedTx(context.Context, *AddTrustedTxRequest) (*AddTrustedTxResponse, error)
+	AddLocalTrustedTxs(context.Context, *AddTrustedTxsRequest) (*AddTrustedTxsResponse, error)
+	AddRemoteTrustedTxs(context.Context, *AddTrustedTxsRequest) (*AddTrustedTxsResponse, error)
 	FillBlock(context.Context, *FillBlockRequest) (*FillBlockResponse, error)
 	mustEmbedUnimplementedTrustedServiceServer()
 }
@@ -334,11 +334,11 @@ func (UnimplementedTrustedServiceServer) SubscribeNewTransaction(*SubscribeNewTx
 func (UnimplementedTrustedServiceServer) Crypt(context.Context, *CryptRequest) (*CryptResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Crypt not implemented")
 }
-func (UnimplementedTrustedServiceServer) AddLocalTrustedTx(context.Context, *AddTrustedTxRequest) (*AddTrustedTxResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddLocalTrustedTx not implemented")
+func (UnimplementedTrustedServiceServer) AddLocalTrustedTxs(context.Context, *AddTrustedTxsRequest) (*AddTrustedTxsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddLocalTrustedTxs not implemented")
 }
-func (UnimplementedTrustedServiceServer) AddRemoteTrustedTx(context.Context, *AddTrustedTxRequest) (*AddTrustedTxResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddRemoteTrustedTx not implemented")
+func (UnimplementedTrustedServiceServer) AddRemoteTrustedTxs(context.Context, *AddTrustedTxsRequest) (*AddTrustedTxsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddRemoteTrustedTxs not implemented")
 }
 func (UnimplementedTrustedServiceServer) FillBlock(context.Context, *FillBlockRequest) (*FillBlockResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FillBlock not implemented")
@@ -647,38 +647,38 @@ func _TrustedService_Crypt_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TrustedService_AddLocalTrustedTx_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddTrustedTxRequest)
+func _TrustedService_AddLocalTrustedTxs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddTrustedTxsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TrustedServiceServer).AddLocalTrustedTx(ctx, in)
+		return srv.(TrustedServiceServer).AddLocalTrustedTxs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/trusted.v1.TrustedService/AddLocalTrustedTx",
+		FullMethod: "/trusted.v1.TrustedService/AddLocalTrustedTxs",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TrustedServiceServer).AddLocalTrustedTx(ctx, req.(*AddTrustedTxRequest))
+		return srv.(TrustedServiceServer).AddLocalTrustedTxs(ctx, req.(*AddTrustedTxsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TrustedService_AddRemoteTrustedTx_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddTrustedTxRequest)
+func _TrustedService_AddRemoteTrustedTxs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddTrustedTxsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TrustedServiceServer).AddRemoteTrustedTx(ctx, in)
+		return srv.(TrustedServiceServer).AddRemoteTrustedTxs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/trusted.v1.TrustedService/AddRemoteTrustedTx",
+		FullMethod: "/trusted.v1.TrustedService/AddRemoteTrustedTxs",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TrustedServiceServer).AddRemoteTrustedTx(ctx, req.(*AddTrustedTxRequest))
+		return srv.(TrustedServiceServer).AddRemoteTrustedTxs(ctx, req.(*AddTrustedTxsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -769,12 +769,12 @@ var TrustedService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TrustedService_Crypt_Handler,
 		},
 		{
-			MethodName: "AddLocalTrustedTx",
-			Handler:    _TrustedService_AddLocalTrustedTx_Handler,
+			MethodName: "AddLocalTrustedTxs",
+			Handler:    _TrustedService_AddLocalTrustedTxs_Handler,
 		},
 		{
-			MethodName: "AddRemoteTrustedTx",
-			Handler:    _TrustedService_AddRemoteTrustedTx_Handler,
+			MethodName: "AddRemoteTrustedTxs",
+			Handler:    _TrustedService_AddRemoteTrustedTxs_Handler,
 		},
 		{
 			MethodName: "FillBlock",

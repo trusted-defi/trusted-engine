@@ -73,6 +73,7 @@ func LoadDb(path string) *SecretDb {
 	}
 	sdb.privk, _ = cryptor.HexToPrivkey(sdb.PK)
 	log.WithField("pk", sdb.PK).Info("load private key")
+	log.WithField("pubk", cryptor.PublicKeyToStr(sdb.privk.PublicKey)).Info("load publickey")
 	return sdb
 }
 

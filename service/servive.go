@@ -104,6 +104,28 @@ func parseAddrsToBytes(accounts []common.Address) [][]byte {
 	return account_data
 }
 
+func (s *TrustedService) parseCryptedTxsTransactions(request *trusted.AddTrustedTxsRequest) ([]*types.Transaction, []error) {
+	txs := make([]*types.Transaction, len(request.CtyptedTxs))
+	errs := make([]error, len(request.CtyptedTxs))
+	for i, cryptedTx := range request.CtyptedTxs {
+
+		txdata, err := s.decrypt(cryptedTx)
+		if err != nil {
+			errs[i] = err
+			continue
+		}
+		tx := new(types.Transaction)
+		err = tx.UnmarshalBinary(txdata)
+		if err != nil {
+			errs[i] = err
+			continue
+		}
+		txs[i] = tx
+
+	}
+	return txs, errs
+}
+
 func (s *TrustedService) ServiceReady(ctx context.Context, req *emptypb.Empty) (*trusted.ServiceReadyResponse, error) {
 	res := new(trusted.ServiceReadyResponse)
 	res.Ready = s.n.IsReady()
@@ -274,49 +296,62 @@ func (s *TrustedService) decrypt(data []byte) ([]byte, error) {
 		return nil, errors.New("private key not found")
 	}
 }
-func (s *TrustedService) AddLocalTrustedTx(ctx context.Context, req *trusted.AddTrustedTxRequest) (*trusted.AddTrustedTxResponse, error) {
-	res := new(trusted.AddTrustedTxResponse)
-	tx := new(types.Transaction)
-	log.WithField("tx", common.Bytes2Hex(req.CtyptedTx)).Info("add trusted tx")
-	txdata, err := s.decrypt(req.GetCtyptedTx())
-	if err != nil {
-		return nil, err
+
+func (s *TrustedService) AddLocalTrustedTxs(ctx context.Context, req *trusted.AddTrustedTxsRequest) (*trusted.AddTrustedTxsResponse, error) {
+	res := new(trusted.AddTrustedTxsResponse)
+	res.Results = make([]*trusted.AddTrustedTxResult, len(req.CtyptedTxs))
+
+	txs, parsedErrs := s.parseCryptedTxsTransactions(req)
+	addTxErrs := s.n.TxPool().AddLocals(txs)
+	for i, tx := range txs {
+		result := new(trusted.AddTrustedTxResult)
+		parseErr := parsedErrs[i]
+		addTxErr := addTxErrs[i]
+		if parseErr != nil {
+			result.Hash = common.Hash{}.Bytes()
+			result.Asset = make([]byte, 0)
+			result.Error = parseErr.Error()
+		} else if addTxErr != nil {
+			result.Hash = common.Hash{}.Bytes()
+			result.Asset = make([]byte, 0)
+			result.Error = addTxErr.Error()
+		} else {
+			result.Hash = tx.Hash().Bytes()
+			result.Asset = generateTxAsset(tx)
+			result.Error = ""
+		}
+		res.Results[i] = result
 	}
-	err = tx.UnmarshalBinary(txdata)
-	if err != nil {
-		res.Hash = common.Hash{}.Bytes()
-		res.Asset = make([]byte, 0)
-		return res, err
-	}
-	errs := s.n.TxPool().AddLocals([]*types.Transaction{tx})
-	if errs[0] == nil {
-		log.WithField("hash", tx.Hash()).Info("add trusted tx succeed")
-		res.Hash = tx.Hash().Bytes()
-		res.Asset = generateTxAsset(tx)
-	} else {
-		log.WithField("err", errs[0]).Info("add trusted tx failed")
-		return nil, errs[0]
-	}
+
 	return res, nil
 }
 
-func (s *TrustedService) AddRemoteTrustedTx(ctx context.Context, req *trusted.AddTrustedTxRequest) (*trusted.AddTrustedTxResponse, error) {
-	res := new(trusted.AddTrustedTxResponse)
-	tx := new(types.Transaction)
-	txdata, err := s.decrypt(req.GetCtyptedTx())
-	if err != nil {
-		return nil, err
-	}
-	err = tx.UnmarshalBinary(txdata)
-	if err != nil {
-		res.Hash = common.Hash{}.Bytes()
-		res.Asset = make([]byte, 0)
-		return res, err
-	}
-	// todo: add check tx and add remote tx to txpool.
+func (s *TrustedService) AddRemoteTrustedTx(ctx context.Context, req *trusted.AddTrustedTxsRequest) (*trusted.AddTrustedTxsResponse, error) {
+	res := new(trusted.AddTrustedTxsResponse)
+	res.Results = make([]*trusted.AddTrustedTxResult, len(req.CtyptedTxs))
 
-	res.Hash = tx.Hash().Bytes()
-	res.Asset = generateTxAsset(tx)
+	txs, parsedErrs := s.parseCryptedTxsTransactions(req)
+	addTxErrs := s.n.TxPool().AddRemotes(txs)
+	for i, tx := range txs {
+		result := new(trusted.AddTrustedTxResult)
+		parseErr := parsedErrs[i]
+		addTxErr := addTxErrs[i]
+		if parseErr != nil {
+			result.Hash = common.Hash{}.Bytes()
+			result.Asset = make([]byte, 0)
+			result.Error = parseErr.Error()
+		} else if addTxErr != nil {
+			result.Hash = common.Hash{}.Bytes()
+			result.Asset = make([]byte, 0)
+			result.Error = addTxErr.Error()
+		} else {
+			result.Hash = tx.Hash().Bytes()
+			result.Asset = generateTxAsset(tx)
+			result.Error = ""
+		}
+		res.Results[i] = result
+	}
+
 	return res, nil
 }
 
