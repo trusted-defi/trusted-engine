@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/sirupsen/logrus"
+	"github.com/trusted-defi/trusted-engine/config"
 	corecmn "github.com/trusted-defi/trusted-engine/core/common"
 	"github.com/trusted-defi/trusted-engine/core/cryptor"
 	"github.com/trusted-defi/trusted-engine/core/mempool"
@@ -329,6 +330,7 @@ func (s *TrustedService) AddLocalTrustedTxs(ctx context.Context, req *trusted.Ad
 func (s *TrustedService) AddRemoteTrustedTx(ctx context.Context, req *trusted.AddTrustedTxsRequest) (*trusted.AddTrustedTxsResponse, error) {
 	res := new(trusted.AddTrustedTxsResponse)
 	res.Results = make([]*trusted.AddTrustedTxResult, len(req.CtyptedTxs))
+	log.WithField("remotetx", len(req.CtyptedTxs)).Info("handler add remote trusted tx")
 
 	txs, parsedErrs := s.parseCryptedTxsTransactions(req)
 	addTxErrs := s.n.TxPool().AddRemotes(txs)
@@ -365,8 +367,9 @@ func RegisterService(server *grpc.Server, n *node.Node) {
 	trusted.RegisterTrustedServiceServer(server, s)
 }
 
-func StartTrustedService(n *node.Node) {
-	lis, err := net.Listen("tcp", ":3802")
+func StartTrustedService(n *node.Node, nodeconfig config.NodeConfig) {
+	listenAddr := fmt.Sprintf(":%d", nodeconfig.GrpcPort)
+	lis, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		fmt.Printf("failed to listen: %v", err)
 		return

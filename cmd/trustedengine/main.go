@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/trusted-defi/trusted-engine/cmd/trustedengine/version"
+	"github.com/trusted-defi/trusted-engine/config"
 	"github.com/trusted-defi/trusted-engine/log"
 	"github.com/trusted-defi/trusted-engine/node"
 	"github.com/trusted-defi/trusted-engine/service"
@@ -22,6 +23,16 @@ func main() {
 			Name:  "generate",
 			Value: false,
 			Usage: "generate test secretdb",
+		},
+		&cli.StringFlag{
+			Name:  "private",
+			Value: "",
+			Usage: "start with given privatekey",
+		},
+		&cli.IntFlag{
+			Name:  "grpc-port",
+			Value: 3802,
+			Usage: "service port",
 		},
 	}
 	//app.Flags = appFlags
@@ -48,7 +59,12 @@ func startNode(ctx *cli.Context) error {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	log.Info("start node")
-	n := node.NewNode(ctx.Bool("generate"))
-	service.StartTrustedService(n)
+	nodeconfig := config.NodeConfig{
+		Generate:     ctx.Bool("generate"),
+		GivenPrivate: ctx.String("private"),
+		GrpcPort:     ctx.Int("grpc-port"),
+	}
+	n := node.NewNode(nodeconfig)
+	service.StartTrustedService(n, nodeconfig)
 	return nil
 }

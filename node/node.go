@@ -2,7 +2,9 @@ package node
 
 import (
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/trusted-defi/trusted-engine/config"
 	"github.com/trusted-defi/trusted-engine/core/mempool"
+	"github.com/trusted-defi/trusted-engine/log"
 	"math/big"
 	"path/filepath"
 )
@@ -30,14 +32,24 @@ func updateConfig() {
 	chainConfig.ChainID = big.NewInt(1024)
 }
 
-func NewNode(generate bool) *Node {
+func NewNode(nodeconfig config.NodeConfig) *Node {
 	n := new(Node)
 	n.txpool = mempool.NewTxPool(mempool.DefaultTxPoolConfig, chainConfig, NodeDir)
 	sdbpath := filepath.Join(NodeDir, dbfile)
-	if generate {
+	var err error
+	if nodeconfig.Generate {
 		n.sdb = GenerateDB(sdbpath)
 	} else {
-		n.sdb = LoadDb(sdbpath)
+		if len(nodeconfig.GivenPrivate) > 0 {
+			n.sdb, err = CreateWithHexkey(nodeconfig.GivenPrivate)
+			if err != nil {
+				log.WithField("err", err).Error("create secret db with key failed")
+			} else {
+				SaveDb(n.sdb, sdbpath)
+			}
+		} else {
+			n.sdb = LoadDb(sdbpath)
+		}
 	}
 
 	return n

@@ -17,3 +17,9 @@ var defaultConfig = Config{
 func GetConfig() *Config {
 	return gconfig
 }
+
+type NodeConfig struct {
+	Generate     bool
+	GivenPrivate string
+	GrpcPort     int
+}
