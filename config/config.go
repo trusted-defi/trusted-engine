@@ -22,4 +22,6 @@ type NodeConfig struct {
 	Generate     bool
 	GivenPrivate string
 	GrpcPort     int
+	NodeDir      string
+	ChainServer  string
 }

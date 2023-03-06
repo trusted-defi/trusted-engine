@@ -219,7 +219,7 @@ type txpoolResetRequest struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(conf TxPoolConfig, chainconfig *params.ChainConfig, nodedir string) *TxPool {
+func NewTxPool(conf TxPoolConfig, chainconfig *params.ChainConfig, nodeconfig config.NodeConfig) *TxPool {
 
 	if chainconfig == nil {
 		chainconfig = params.MainnetChainConfig
@@ -247,7 +247,7 @@ func NewTxPool(conf TxPoolConfig, chainconfig *params.ChainConfig, nodedir strin
 		gasPrice:        new(big.Int).SetUint64(conf.PriceLimit),
 	}
 	var err error
-	pool.chainclient, err = chainclient.NewChainClient(config.GetConfig())
+	pool.chainclient, err = chainclient.NewChainClient(nodeconfig)
 	if err != nil {
 		log.Error("create chain client failed", "err", err)
 		return nil
@@ -264,7 +264,7 @@ func NewTxPool(conf TxPoolConfig, chainconfig *params.ChainConfig, nodedir strin
 
 	// If local transactions and journaling is enabled, load from disk
 	if !conf.NoLocals && conf.Journal != "" {
-		jourpath := filepath.Join(nodedir, conf.Journal)
+		jourpath := filepath.Join(nodeconfig.NodeDir, conf.Journal)
 		pool.journal = newTxJournal(jourpath)
 
 		if err := pool.journal.load(pool.AddLocals); err != nil {

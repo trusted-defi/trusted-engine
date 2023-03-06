@@ -26,8 +26,8 @@ type ChainClient struct {
 	ctx           context.Context
 }
 
-func NewChainClient(conf *config.Config) (*ChainClient, error) {
-	c, err := grpc.Dial(conf.ChainServerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func NewChainClient(nodeconfig config.NodeConfig) (*ChainClient, error) {
+	c, err := grpc.Dial(nodeconfig.ChainServer, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, errors.New("dial server failed")
 	}

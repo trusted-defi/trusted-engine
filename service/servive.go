@@ -327,7 +327,7 @@ func (s *TrustedService) AddLocalTrustedTxs(ctx context.Context, req *trusted.Ad
 	return res, nil
 }
 
-func (s *TrustedService) AddRemoteTrustedTx(ctx context.Context, req *trusted.AddTrustedTxsRequest) (*trusted.AddTrustedTxsResponse, error) {
+func (s *TrustedService) AddRemoteTrustedTxs(ctx context.Context, req *trusted.AddTrustedTxsRequest) (*trusted.AddTrustedTxsResponse, error) {
 	res := new(trusted.AddTrustedTxsResponse)
 	res.Results = make([]*trusted.AddTrustedTxResult, len(req.CtyptedTxs))
 	log.WithField("remotetx", len(req.CtyptedTxs)).Info("handler add remote trusted tx")

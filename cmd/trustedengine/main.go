@@ -34,6 +34,16 @@ func main() {
 			Value: 3802,
 			Usage: "service port",
 		},
+		&cli.StringFlag{
+			Name:  "chain-server",
+			Value: ":3801",
+			Usage: "chain server grpc address",
+		},
+		&cli.StringFlag{
+			Name:  "nodedir",
+			Value: "nodedata",
+			Usage: "node data dir",
+		},
 	}
 	//app.Flags = appFlags
 
@@ -63,6 +73,8 @@ func startNode(ctx *cli.Context) error {
 		Generate:     ctx.Bool("generate"),
 		GivenPrivate: ctx.String("private"),
 		GrpcPort:     ctx.Int("grpc-port"),
+		NodeDir:      ctx.String("nodedir"),
+		ChainServer:  ctx.String("chain-server"),
 	}
 	n := node.NewNode(nodeconfig)
 	service.StartTrustedService(n, nodeconfig)

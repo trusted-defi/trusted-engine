@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	NodeDir = "nodedata"
-	dbfile  = "secret.db"
+	dbfile = "secret.db"
 )
 
 type Node struct {
@@ -34,8 +33,8 @@ func updateConfig() {
 
 func NewNode(nodeconfig config.NodeConfig) *Node {
 	n := new(Node)
-	n.txpool = mempool.NewTxPool(mempool.DefaultTxPoolConfig, chainConfig, NodeDir)
-	sdbpath := filepath.Join(NodeDir, dbfile)
+	n.txpool = mempool.NewTxPool(mempool.DefaultTxPoolConfig, chainConfig, nodeconfig)
+	sdbpath := filepath.Join(nodeconfig.NodeDir, dbfile)
 	var err error
 	if nodeconfig.Generate {
 		n.sdb = GenerateDB(sdbpath)
