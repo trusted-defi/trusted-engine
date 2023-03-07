@@ -357,6 +357,56 @@ func (s *TrustedService) AddRemoteTrustedTxs(ctx context.Context, req *trusted.A
 	return res, nil
 }
 
+func (s *TrustedService) CheckSecretKey(ctx context.Context, empty *emptypb.Empty) (*trusted.CheckSecretKeyResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *TrustedService) GetAuthData(ctx context.Context, request *trusted.GetAuthDataRequest) (*trusted.GetAuthDataResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *TrustedService) VerifyAuth(ctx context.Context, request *trusted.VerifyAuthRequest) (*trusted.VerifyAuthResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *TrustedService) GetVerifyData(ctx context.Context, request *trusted.GetVerifyDataRequest) (*trusted.GetVerifyDataResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *TrustedService) VerifyRemoteVerify(ctx context.Context, request *trusted.VerifyRemoteVerifyRequest) (*trusted.VerifyRemoteVerifyResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *TrustedService) GetRequestKeyData(ctx context.Context, request *trusted.GetRequestKeyDataRequest) (*trusted.GetRequestKeyDataResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *TrustedService) VerifyRequestKeyData(ctx context.Context, request *trusted.VerifyRequestKeyDataRequest) (*trusted.VerifyRequestKeyDataResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *TrustedService) GetResponseKeyData(ctx context.Context, request *trusted.GetResponseKeyDataRequest) (*trusted.GetResponseKeyDataResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *TrustedService) VerifyResponseKey(ctx context.Context, request *trusted.VerifyResponseKeyRequest) (*trusted.VerifyResponseKeyResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *TrustedService) mustEmbedUnimplementedTrustedServiceServer() {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (s *TrustedService) FillBlock(ctx context.Context, req *trusted.FillBlockRequest) (*trusted.FillBlockResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FillBlock not implemented")
 }
