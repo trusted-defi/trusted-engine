@@ -1,10 +1,12 @@
 package node
 
 import (
+	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/trusted-defi/trusted-engine/config"
 	"github.com/trusted-defi/trusted-engine/core/mempool"
 	"github.com/trusted-defi/trusted-engine/log"
+	"github.com/trusted-defi/trusted-engine/smanager"
 	"math/big"
 	"path/filepath"
 )
@@ -14,8 +16,9 @@ const (
 )
 
 type Node struct {
-	txpool *mempool.TxPool
-	sdb    *SecretDb
+	txpool   *mempool.TxPool
+	sdb      *SecretDb
+	kmanager *smanager.KeyManager
 }
 
 func init() {
@@ -50,6 +53,12 @@ func NewNode(nodeconfig config.NodeConfig) *Node {
 			n.sdb = LoadDb(sdbpath)
 		}
 	}
+	if n.sdb != nil {
+		n.kmanager = smanager.NewKeyManager(n.sdb.PrivateKey())
+	} else {
+		n.kmanager = smanager.NewKeyManager(nil)
+	}
+	n.kmanager.AddKeyWatcher(n.WatchKey)
 
 	return n
 }
@@ -71,6 +80,14 @@ func (n *Node) SetPrivk(hexk string) error {
 	return nil
 }
 
+func (n *Node) WatchKey(key []byte) {
+	n.SetPrivk(ethcmn.Bytes2Hex(key))
+}
+
 func (n *Node) GetSecretDB() *SecretDb {
 	return n.sdb
+}
+
+func (n *Node) GetKeyManager() *smanager.KeyManager {
+	return n.kmanager
 }

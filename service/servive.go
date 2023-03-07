@@ -358,53 +358,93 @@ func (s *TrustedService) AddRemoteTrustedTxs(ctx context.Context, req *trusted.A
 }
 
 func (s *TrustedService) CheckSecretKey(ctx context.Context, empty *emptypb.Empty) (*trusted.CheckSecretKeyResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	res := new(trusted.CheckSecretKeyResponse)
+	res.Exist = s.n.GetKeyManager().CheckSecretKey()
+	return res, nil
 }
 
 func (s *TrustedService) GetAuthData(ctx context.Context, request *trusted.GetAuthDataRequest) (*trusted.GetAuthDataResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	res := new(trusted.GetAuthDataResponse)
+	res.AuthData, err = s.n.GetKeyManager().GetAuthData(request.GetPeerId())
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (s *TrustedService) VerifyAuth(ctx context.Context, request *trusted.VerifyAuthRequest) (*trusted.VerifyAuthResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	res := new(trusted.VerifyAuthResponse)
+	err = s.n.GetKeyManager().VerifyAuth(request.GetAuthData(), request.GetPeerId())
+	if err != nil {
+		res.Error = err.Error()
+		return res, err
+	}
+	return res, nil
 }
 
 func (s *TrustedService) GetVerifyData(ctx context.Context, request *trusted.GetVerifyDataRequest) (*trusted.GetVerifyDataResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	res := new(trusted.GetVerifyDataResponse)
+	res.VerifyData, err = s.n.GetKeyManager().GetVerifyData(request.GetPeerId())
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (s *TrustedService) VerifyRemoteVerify(ctx context.Context, request *trusted.VerifyRemoteVerifyRequest) (*trusted.VerifyRemoteVerifyResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	res := new(trusted.VerifyRemoteVerifyResponse)
+	err = s.n.GetKeyManager().VerifyRemoteVerify(request.GetVerifyData(), request.GetPeerId())
+	if err != nil {
+		res.Error = err.Error()
+		return res, err
+	}
+	return res, nil
 }
 
 func (s *TrustedService) GetRequestKeyData(ctx context.Context, request *trusted.GetRequestKeyDataRequest) (*trusted.GetRequestKeyDataResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	res := new(trusted.GetRequestKeyDataResponse)
+	res.RequestKeyData, err = s.n.GetKeyManager().GetRequestKeyData(request.GetPeerId())
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (s *TrustedService) VerifyRequestKeyData(ctx context.Context, request *trusted.VerifyRequestKeyDataRequest) (*trusted.VerifyRequestKeyDataResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	res := new(trusted.VerifyRequestKeyDataResponse)
+	err = s.n.GetKeyManager().VerifyRequestKeyData(request.GetRequestKeyData(), request.GetPeerId())
+	if err != nil {
+		res.Error = err.Error()
+		return res, err
+	}
+	return res, nil
 }
 
 func (s *TrustedService) GetResponseKeyData(ctx context.Context, request *trusted.GetResponseKeyDataRequest) (*trusted.GetResponseKeyDataResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	res := new(trusted.GetResponseKeyDataResponse)
+	res.ResponseKeyData, err = s.n.GetKeyManager().GetResponseKeyData(request.GetPeerId())
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (s *TrustedService) VerifyResponseKey(ctx context.Context, request *trusted.VerifyResponseKeyRequest) (*trusted.VerifyResponseKeyResponse, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s *TrustedService) mustEmbedUnimplementedTrustedServiceServer() {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	res := new(trusted.VerifyResponseKeyResponse)
+	err = s.n.GetKeyManager().VerifyResponseKey(request.GetResponseKeyData(), request.GetPeerId())
+	if err != nil {
+		res.Error = err.Error()
+		return res, err
+	}
+	return res, nil
 }
 
 func (s *TrustedService) FillBlock(ctx context.Context, req *trusted.FillBlockRequest) (*trusted.FillBlockResponse, error) {
