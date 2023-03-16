@@ -7,7 +7,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/sirupsen/logrus"
+	"github.com/trusted-defi/trusted-engine/blockfill"
 	"github.com/trusted-defi/trusted-engine/config"
 	corecmn "github.com/trusted-defi/trusted-engine/core/common"
 	"github.com/trusted-defi/trusted-engine/core/cryptor"
@@ -15,8 +17,6 @@ import (
 	"github.com/trusted-defi/trusted-engine/node"
 	trusted "github.com/trusted-defi/trusted-engine/protocol/generate/trusted/v1"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"math/big"
 	"net"
@@ -25,7 +25,8 @@ import (
 var log = logrus.WithField("prefix", "service")
 
 type TrustedService struct {
-	n *node.Node
+	n           *node.Node
+	blockFiller *blockfill.BlockFiller
 	trusted.UnimplementedTrustedServiceServer
 }
 
@@ -448,12 +449,42 @@ func (s *TrustedService) VerifyResponseKey(ctx context.Context, request *trusted
 }
 
 func (s *TrustedService) FillBlock(ctx context.Context, req *trusted.FillBlockRequest) (*trusted.FillBlockResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FillBlock not implemented")
+	pending := s.n.TxPool().Pending(false)
+	txs := make([]*types.Transaction, 0, 10000)
+	for _, accountTxs := range pending {
+		txs = append(txs, accountTxs...)
+	}
+	s.blockFiller.SetBlockProof(blockfill.BlockProofParam{ParentHash: common.BytesToHash(req.ParentHash), BlockTime: req.Timestamp}, txs)
+	res := new(trusted.FillBlockResponse)
+	res.SortedTxs = []byte{}
+	if len(txs) > 0 {
+		data, err := rlp.EncodeToBytes(txs)
+		if err != nil {
+			log.WithField("err", err).Error("rlp encode transaction failed")
+		} else {
+			res.SortedTxs = data
+		}
+	}
+
+	return res, nil
 }
 
-func RegisterService(server *grpc.Server, n *node.Node) {
+func (s *TrustedService) CommittedBlockVerify(ctx context.Context, request *trusted.CommittedBlockVerifyRequest) (*trusted.CommittedBlockVerifyResponse, error) {
+	res := new(trusted.CommittedBlockVerifyResponse)
+	block := &types.Block{}
+	err := rlp.DecodeBytes(request.BlockData, block)
+	if err != nil {
+		log.WithField("err", err).Error("rlp decode block data failed")
+		return res, nil
+	}
+	s.blockFiller.VerifyBlock(block)
+	return res, nil
+}
+
+func RegisterService(server *grpc.Server, n *node.Node, nodeconfig config.NodeConfig) {
 	s := new(TrustedService)
 	s.n = n
+	s.blockFiller = blockfill.NewBlockFiller(nodeconfig.NodeDir)
 	trusted.RegisterTrustedServiceServer(server, s)
 }
 
@@ -465,7 +496,7 @@ func StartTrustedService(n *node.Node, nodeconfig config.NodeConfig) {
 		return
 	}
 	s := grpc.NewServer()
-	RegisterService(s, n)
+	RegisterService(s, n, nodeconfig)
 
 	err = s.Serve(lis)
 	if err != nil {
